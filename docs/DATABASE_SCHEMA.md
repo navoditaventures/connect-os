@@ -2,6 +2,20 @@
 
 ## Tables
 
+### users
+```sql
+CREATE TABLE users (
+  id uuid NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  google_id text UNIQUE,
+  email text UNIQUE NOT NULL,
+  name text,
+  profile_image text,
+  digital_profile_url text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+```
+
 ### contacts
 ```sql
 CREATE TABLE contacts (
