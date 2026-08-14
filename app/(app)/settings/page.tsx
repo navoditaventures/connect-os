@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import TemplateManager from "@/components/template-manager";
+import ExportManager from "@/components/export-manager";
 
 interface UserSettings {
   digital_profile_url: string;
@@ -101,6 +102,10 @@ export default function Settings() {
 
         <div className="bg-white rounded-lg p-6 border border-gray-200">
           <TemplateManager />
+        </div>
+
+        <div className="bg-white rounded-lg p-6 border border-gray-200">
+          <ExportManager />
         </div>
 
         <div className="bg-white rounded-lg p-6 border border-gray-200">
