@@ -1,48 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { supabase } from "@/lib/supabase";
+import { useContacts } from "@/lib/hooks/useContacts";
+import { useEvents } from "@/lib/hooks/useEvents";
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
-  const [stats, setStats] = useState({
-    totalContacts: 0,
-    eventsAttended: 0,
-    pendingFollowups: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const loadStats = async () => {
-      if (!user) return;
-
-      try {
-        const [contacts, events, interactions] = await Promise.all([
-          supabase.from("contacts").select("id", { count: "exact" }).eq("user_id", user.id),
-          supabase.from("events").select("id", { count: "exact" }).eq("user_id", user.id),
-          supabase
-            .from("interactions")
-            .select("id", { count: "exact" })
-            .eq("user_id", user.id)
-            .eq("follow_up_status", "pending"),
-        ]);
-
-        setStats({
-          totalContacts: contacts.count || 0,
-          eventsAttended: events.count || 0,
-          pendingFollowups: interactions.count || 0,
-        });
-      } catch (error) {
-        console.error("Error loading stats:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadStats();
-  }, [user]);
+  const { contacts, isLoading: contactsLoading } = useContacts();
+  const { events, activeEvent, isLoading: eventsLoading } = useEvents();
 
   const handleSignOut = async () => {
     try {
@@ -51,6 +17,10 @@ export default function Dashboard() {
       console.error("Sign out error:", error);
     }
   };
+
+  const recentContacts = contacts.slice(0, 5);
+  const activeContactCount = contacts.filter((c) => c.contact_type === "active").length;
+  const historicalContactCount = contacts.filter((c) => c.contact_type === "historical").length;
 
   return (
     <div className="max-w-4xl mx-auto p-4">
@@ -68,43 +38,102 @@ export default function Dashboard() {
       </div>
 
       <Link
-        href="/scanner"
+        href="/contacts/new"
         className="block w-full bg-black text-white text-center py-8 px-6 rounded-lg font-bold text-xl mb-8 hover:bg-gray-800 transition-colors"
       >
-        📸 SCAN BUSINESS CARD
+        ➕ ADD CONTACT
       </Link>
+
+      {activeEvent && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
+          <h2 className="font-semibold text-blue-900 mb-2">Active Event</h2>
+          <p className="text-blue-800">
+            <strong>{activeEvent.name}</strong> - {new Date(activeEvent.date).toLocaleDateString()}
+          </p>
+          <Link
+            href={`/events/${activeEvent.id}`}
+            className="text-blue-600 hover:underline text-sm mt-2 inline-block"
+          >
+            View event →
+          </Link>
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="text-2xl font-bold">{isLoading ? "-" : stats.totalContacts}</div>
-          <div className="text-sm text-gray-600">Contacts</div>
+          <div className="text-2xl font-bold">{contactsLoading ? "-" : contacts.length}</div>
+          <div className="text-sm text-gray-600">Total Contacts</div>
+          <div className="text-xs text-gray-500 mt-2">
+            {activeContactCount} active · {historicalContactCount} historical
+          </div>
         </div>
         <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="text-2xl font-bold">{isLoading ? "-" : stats.eventsAttended}</div>
+          <div className="text-2xl font-bold">{eventsLoading ? "-" : events.length}</div>
           <div className="text-sm text-gray-600">Events</div>
         </div>
         <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="text-2xl font-bold">{isLoading ? "-" : stats.pendingFollowups}</div>
-          <div className="text-sm text-gray-600">Pending</div>
+          <Link href="/followups" className="block hover:bg-gray-50 p-2 -m-2 rounded">
+            <div className="text-2xl font-bold">0</div>
+            <div className="text-sm text-gray-600">Follow-ups</div>
+          </Link>
         </div>
       </div>
 
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-        <Link
-          href="/events/new"
-          className="block p-4 bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
-        >
-          <div className="font-semibold">Start New Event</div>
-          <div className="text-sm text-gray-600">Begin capturing contacts at an event</div>
-        </Link>
-        <Link
-          href="/import"
-          className="block p-4 bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
-        >
-          <div className="font-semibold">Import Historical Cards</div>
-          <div className="text-sm text-gray-600">Digitize your existing business card collection</div>
-        </Link>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Recent Contacts</h2>
+          {contactsLoading ? (
+            <p className="text-gray-600">Loading...</p>
+          ) : recentContacts.length === 0 ? (
+            <p className="text-gray-600 text-sm">No contacts yet</p>
+          ) : (
+            <div className="space-y-2">
+              {recentContacts.map((contact) => (
+                <Link
+                  key={contact.id}
+                  href={`/contacts/${contact.id}`}
+                  className="block p-3 bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all"
+                >
+                  <p className="font-medium text-sm">{contact.name}</p>
+                  {contact.company && <p className="text-xs text-gray-600">{contact.company}</p>}
+                </Link>
+              ))}
+              <Link
+                href="/contacts"
+                className="text-sm text-gray-600 hover:text-gray-900 mt-2 inline-block"
+              >
+                View all contacts →
+              </Link>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+          <div className="space-y-3">
+            <Link
+              href="/events"
+              className="block p-4 bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+            >
+              <div className="font-semibold text-sm">📅 Manage Events</div>
+              <div className="text-xs text-gray-600">Create or view events</div>
+            </Link>
+            <Link
+              href="/contacts/new"
+              className="block p-4 bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+            >
+              <div className="font-semibold text-sm">👤 Add Contact</div>
+              <div className="text-xs text-gray-600">Add a new contact manually</div>
+            </Link>
+            <Link
+              href="/contacts"
+              className="block p-4 bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+            >
+              <div className="font-semibold text-sm">🔍 Search Contacts</div>
+              <div className="text-xs text-gray-600">Find and manage your contacts</div>
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
