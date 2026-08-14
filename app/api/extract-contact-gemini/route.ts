@@ -53,6 +53,11 @@ async function extractContactWithGemini(
   imageBase64: string,
   mimeType: string
 ): Promise<ExtractedContact> {
+  console.log("Starting Gemini extraction...");
+  console.log("API Key present:", !!process.env.GEMINI_API_KEY);
+  console.log("Image Base64 length:", imageBase64.length);
+  console.log("MIME type:", mimeType);
+
   const prompt = `You are an expert at reading and extracting information from business cards.
 
 Analyze this business card image and extract the following information with maximum accuracy:
@@ -122,19 +127,33 @@ Return ONLY a JSON object (no markdown, no code blocks, just raw JSON):
     );
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(
-        `Gemini API error: ${error.error?.message || response.statusText}`
-      );
+      const errorText = await response.text();
+      console.error("Gemini API error response:", errorText);
+      console.error("Response status:", response.status);
+      console.error("Response headers:", Object.fromEntries(response.headers));
+
+      let errorMessage = response.statusText;
+      try {
+        const error = JSON.parse(errorText);
+        errorMessage = error.error?.message || error.error?.details?.[0]?.errorMessage || errorText;
+      } catch (e) {
+        errorMessage = errorText;
+      }
+
+      throw new Error(`Gemini API error (${response.status}): ${errorMessage}`);
     }
 
     const data = await response.json();
+    console.log("Gemini response received");
+    console.log("Response data:", JSON.stringify(data).substring(0, 500));
 
     if (!data.candidates || !data.candidates[0]?.content?.parts[0]?.text) {
+      console.error("Invalid response structure:", data);
       throw new Error("No response from Gemini API");
     }
 
     const responseText = data.candidates[0].content.parts[0].text;
+    console.log("Extracted text:", responseText.substring(0, 200));
 
     // Parse the JSON response
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
