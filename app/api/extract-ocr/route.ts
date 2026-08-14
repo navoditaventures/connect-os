@@ -71,13 +71,13 @@ function parseBusinessCardText(ocrText: string): ExtractedContact {
 
   // Extract all emails
   const emails = ocrText.match(emailRegex) || [];
-  if (emails.length > 0) {
+  if (emails && emails.length > 0 && emails[0]) {
     result.email = emails[0].toLowerCase();
   }
 
   // Extract all phone numbers
   const phones = ocrText.match(phoneRegex) || [];
-  if (phones.length > 0) {
+  if (phones && phones.length > 0 && phones[0]) {
     result.phone = phones[0].trim();
   }
 
