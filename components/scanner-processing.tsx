@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
+import Tesseract from "tesseract.js";
 
 interface ScannerProcessingProps {
   imageBlob: Blob;
@@ -22,7 +23,7 @@ interface ScannerProcessingProps {
   onCancel: () => void;
 }
 
-type ProcessingStep = "analyzing" | "complete";
+type ProcessingStep = "ocr" | "parsing" | "complete";
 
 export default function ScannerProcessing({
   imageBlob,
@@ -30,7 +31,8 @@ export default function ScannerProcessing({
   onError,
   onCancel,
 }: ScannerProcessingProps) {
-  const [step, setStep] = useState<ProcessingStep>("analyzing");
+  const [step, setStep] = useState<ProcessingStep>("ocr");
+  const [ocrText, setOcrText] = useState("");
   const [extracted, setExtracted] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
@@ -40,14 +42,27 @@ export default function ScannerProcessing({
       try {
         setProgress(10);
 
-        // Convert blob to base64
-        const base64 = await blobToBase64(imageBlob);
-        setProgress(30);
+        // Step 1: OCR using Tesseract.js (client-side, completely free)
+        console.log("Starting Tesseract OCR...");
+        const ocrResult = await Tesseract.recognize(imageBlob, "eng", {
+          logger: (m) => {
+            console.log("OCR progress:", m.progress);
+            setProgress(Math.min(50, 10 + m.progress * 40));
+          },
+        });
 
-        // Send image to Gemini AI extraction API
-        const response = await axios.post("/api/extract-contact-gemini", {
-          imageBase64: base64,
-          mimeType: "image/jpeg",
+        const extractedText = ocrResult.data.text;
+        setOcrText(extractedText);
+        setProgress(60);
+
+        console.log("OCR complete. Text length:", extractedText.length);
+
+        // Step 2: Parse extracted text
+        setStep("parsing");
+        setProgress(70);
+
+        const response = await axios.post("/api/extract-ocr", {
+          ocrText: extractedText,
         });
 
         setExtracted(response.data);
@@ -57,13 +72,13 @@ export default function ScannerProcessing({
           setProgress(100);
           setStep("complete");
           onComplete({
-            ocrText: response.data.rawText || "",
+            ocrText: extractedText,
             extracted: response.data,
           });
         }, 500);
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Processing failed";
+        const message = err instanceof Error ? err.message : "Processing failed";
+        console.error("Processing error:", message);
         setError(message);
         onError(message);
       }
