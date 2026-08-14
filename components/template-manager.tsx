@@ -114,9 +114,7 @@ export default function TemplateManager() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm font-mono"
             />
             <p className="text-xs text-gray-500 mt-2">
-              Available variables: {{'{'}}}first_name{{'}'}} {{'{'}}}full_name{{'}'}} {{'{'}}}company_name{{'}'}}
-              {{'{'}}}designation{{'}'}} {{'{'}}}event_name{{'}'}} {{'{'}}}event_date{{'}'}} {{'{'}}}industry{{'}}}
-              {{'{'}}}relationship{{'}'}} {{'{'}}}opportunity{{'}'}} {{'{'}}}notes{{'}'}} {{'{'}}}digital_profile_url{{'}}}
+              Available variables: {`{{first_name}}, {{full_name}}, {{company_name}}, {{designation}}, {{event_name}}, {{event_date}}, {{industry}}, {{relationship}}, {{opportunity}}, {{notes}}, {{digital_profile_url}}`}
             </p>
           </div>
 
