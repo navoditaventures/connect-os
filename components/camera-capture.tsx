@@ -93,24 +93,41 @@ export default function CameraCapture({ onCapture, onError }: CameraCaptureProps
 
   return (
     <div className="space-y-4">
-      <div className="relative bg-black rounded-lg overflow-hidden aspect-video">
+      {/* Large capture frame - 85% of screen height */}
+      <div className="relative bg-black rounded-lg overflow-hidden w-full" style={{ aspectRatio: "3/4", height: "70vh" }}>
         <video
           ref={videoRef}
           playsInline
           className="w-full h-full object-cover"
         />
 
+        {/* Frame guide */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 border-4 border-yellow-400 border-opacity-50 m-8 rounded-lg">
-            <div className="absolute top-2 left-2 w-6 h-6 border-t-4 border-l-4 border-yellow-400"></div>
-            <div className="absolute top-2 right-2 w-6 h-6 border-t-4 border-r-4 border-yellow-400"></div>
-            <div className="absolute bottom-2 left-2 w-6 h-6 border-b-4 border-l-4 border-yellow-400"></div>
-            <div className="absolute bottom-2 right-2 w-6 h-6 border-b-4 border-r-4 border-yellow-400"></div>
+          {/* Main capture frame border */}
+          <div className="absolute inset-0 border-4" style={{ borderColor: "rgba(251, 191, 36, 0.6)", margin: "20px", borderRadius: "16px" }}>
+            {/* Corner guides */}
+            <div className="absolute top-6 left-6 w-8 h-8 border-t-4 border-l-4" style={{ borderColor: "rgba(251, 191, 36, 0.8)" }}></div>
+            <div className="absolute top-6 right-6 w-8 h-8 border-t-4 border-r-4" style={{ borderColor: "rgba(251, 191, 36, 0.8)" }}></div>
+            <div className="absolute bottom-6 left-6 w-8 h-8 border-b-4 border-l-4" style={{ borderColor: "rgba(251, 191, 36, 0.8)" }}></div>
+            <div className="absolute bottom-6 right-6 w-8 h-8 border-b-4 border-r-4" style={{ borderColor: "rgba(251, 191, 36, 0.8)" }}></div>
           </div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <p className="text-white text-sm font-semibold text-center bg-black bg-opacity-50 px-4 py-2 rounded-lg">
-              Position card within frame
-            </p>
+
+          {/* Center instruction */}
+          <div className="absolute inset-0 flex flex-col items-center justify-between py-8">
+            <div></div>
+            <div className="text-center">
+              <p className="text-white text-lg font-bold text-center bg-black bg-opacity-60 px-4 py-2 rounded-lg mb-4">
+                📸 Position Card
+              </p>
+              <p className="text-white text-sm text-center bg-black bg-opacity-60 px-4 py-2 rounded-lg">
+                Fit entire card within frame
+              </p>
+            </div>
+            <div className="flex gap-2 text-white text-xs bg-black bg-opacity-60 px-4 py-2 rounded-lg">
+              <span>✓ Good lighting</span>
+              <span>✓ Straight angle</span>
+              <span>✓ Clear focus</span>
+            </div>
           </div>
         </div>
       </div>

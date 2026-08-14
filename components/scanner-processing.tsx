@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { extractTextFromImage, parseBusinessCardText } from "@/lib/services/ocr";
 import axios from "axios";
 
 interface ScannerProcessingProps {
@@ -23,7 +22,7 @@ interface ScannerProcessingProps {
   onCancel: () => void;
 }
 
-type ProcessingStep = "ocr" | "structure" | "duplicate" | "complete";
+type ProcessingStep = "analyzing" | "complete";
 
 export default function ScannerProcessing({
   imageBlob,
@@ -31,8 +30,7 @@ export default function ScannerProcessing({
   onError,
   onCancel,
 }: ScannerProcessingProps) {
-  const [step, setStep] = useState<ProcessingStep>("ocr");
-  const [ocrText, setOcrText] = useState("");
+  const [step, setStep] = useState<ProcessingStep>("analyzing");
   const [extracted, setExtracted] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
@@ -40,35 +38,32 @@ export default function ScannerProcessing({
   useEffect(() => {
     const process = async () => {
       try {
-        setProgress(0);
+        setProgress(10);
 
-        const result = await extractTextFromImage(imageBlob);
-        if (result.error) {
-          throw new Error(result.error);
-        }
+        // Convert blob to base64
+        const base64 = await blobToBase64(imageBlob);
+        setProgress(30);
 
-        setOcrText(result.text);
-        setProgress(40);
-        setStep("structure");
-
-        const response = await axios.post("/api/extract-contact", {
-          ocrText: result.text,
+        // Send image to AI extraction API
+        const response = await axios.post("/api/extract-contact-vision", {
+          imageBase64: base64,
+          mimeType: "image/jpeg",
         });
 
         setExtracted(response.data);
-        setProgress(80);
-        setStep("duplicate");
+        setProgress(90);
 
         setTimeout(() => {
           setProgress(100);
           setStep("complete");
           onComplete({
-            ocrText: result.text,
+            ocrText: response.data.rawText || "",
             extracted: response.data,
           });
         }, 500);
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Processing failed";
+        const message =
+          err instanceof Error ? err.message : "Processing failed";
         setError(message);
         onError(message);
       }
@@ -77,27 +72,63 @@ export default function ScannerProcessing({
     process();
   }, [imageBlob, onComplete, onError]);
 
-  const steps = [
-    { id: "ocr", label: "Reading card...", icon: "👁️" },
-    { id: "structure", label: "Extracting information...", icon: "🔍" },
-    { id: "duplicate", label: "Checking duplicates...", icon: "✓" },
-  ];
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        resolve(base64.split(",")[1]);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
 
   if (error) {
     return (
-      <div className="space-y-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
-          <p className="font-semibold mb-2">Processing Failed</p>
-          <p className="text-sm mb-4">{error}</p>
-          <p className="text-xs text-red-700 mb-4">The card image might be unclear. Try again with better lighting.</p>
+      <div
+        className="space-y-4 p-6 rounded-lg border"
+        style={{
+          background: "rgba(220, 38, 38, 0.05)",
+          borderColor: "var(--color-destructive)",
+        }}
+      >
+        <div>
+          <p className="font-semibold mb-2" style={{ color: "var(--color-destructive)" }}>
+            ⚠️ Processing Failed
+          </p>
+          <p className="text-sm mb-4" style={{ color: "var(--color-destructive)" }}>
+            {error}
+          </p>
+          <p
+            className="text-xs mb-4"
+            style={{ color: "var(--color-destructive)" }}
+          >
+            Tips:
+            <br />• Ensure the entire business card is visible and in focus
+            <br />• Use good lighting (avoid shadows/glare)
+            <br />• Card should be straight, not tilted
+            <br />• Background should contrast with the card
+          </p>
         </div>
         <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800">
-            Retry
+          <button
+            onClick={onCancel}
+            className="flex-1 py-3 rounded-lg font-semibold transition-all"
+            style={{
+              background: "var(--color-primary)",
+              color: "var(--color-on-primary)",
+            }}
+          >
+            Try Again
           </button>
           <button
             onClick={onCancel}
-            className="flex-1 border border-gray-300 rounded-lg hover:bg-gray-50 font-semibold"
+            className="flex-1 py-3 rounded-lg font-semibold border transition-all"
+            style={{
+              borderColor: "var(--color-border)",
+              color: "var(--color-muted-foreground)",
+            }}
           >
             Cancel
           </button>
@@ -107,80 +138,197 @@ export default function ScannerProcessing({
   }
 
   return (
-    <div className="space-y-8">
-      {steps.map((s, index) => {
-        const isActive = s.id === step;
-        const isDone = step === "complete" || steps.findIndex((st) => st.id === step) > index;
-
-        return (
-          <div key={s.id} className="flex gap-4">
-            <div className="flex flex-col items-center">
-              <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all ${
-                  isDone
-                    ? "bg-green-100 text-green-700"
-                    : isActive
-                      ? "bg-blue-100 text-blue-700 animate-pulse"
-                      : "bg-gray-200 text-gray-500"
-                }`}
-              >
-                {isDone ? "✓" : s.icon}
-              </div>
-              {index < steps.length - 1 && (
-                <div className={`w-1 h-8 mt-2 ${isDone ? "bg-green-200" : isActive ? "bg-blue-200" : "bg-gray-200"}`} />
-              )}
-            </div>
-            <div className="pt-3">
-              <p className={`font-medium ${isActive ? "text-black" : isDone ? "text-green-700" : "text-gray-500"}`}>
-                {s.label}
-              </p>
-              {isActive && step === "ocr" && ocrText && (
-                <p className="text-xs text-gray-600 mt-2 line-clamp-2">{ocrText}</p>
-              )}
-            </div>
+    <div className="space-y-6">
+      {/* Processing Step */}
+      <div className="flex gap-4">
+        <div className="flex flex-col items-center">
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all animate-pulse"
+            style={{
+              background:
+                step === "complete"
+                  ? "rgba(16, 185, 129, 0.1)"
+                  : "rgba(37, 99, 235, 0.1)",
+              color:
+                step === "complete"
+                  ? "var(--color-success)"
+                  : "var(--color-primary)",
+            }}
+          >
+            {step === "complete" ? "✓" : "🤖"}
           </div>
-        );
-      })}
+        </div>
+        <div className="pt-3">
+          <p
+            className="font-medium"
+            style={{
+              color:
+                step === "complete"
+                  ? "var(--color-success)"
+                  : "var(--color-foreground)",
+            }}
+          >
+            {step === "complete"
+              ? "Card analyzed successfully!"
+              : "Analyzing business card with AI..."}
+          </p>
+          <p
+            className="text-xs mt-2"
+            style={{ color: "var(--color-muted-foreground)" }}
+          >
+            {step === "analyzing"
+              ? "Reading all details from the card image"
+              : "Ready for review"}
+          </p>
+        </div>
+      </div>
 
+      {/* Extracted Data Summary */}
       {step === "complete" && extracted && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-green-900 font-semibold mb-3">✓ Card processed successfully</p>
-          <div className="grid grid-cols-2 gap-3 text-sm">
+        <div
+          className="rounded-lg p-6 border"
+          style={{
+            background: "rgba(16, 185, 129, 0.05)",
+            borderColor: "var(--color-success)",
+          }}
+        >
+          <p className="font-semibold mb-4" style={{ color: "var(--color-success)" }}>
+            ✓ Extracted Information
+          </p>
+
+          <div className="grid grid-cols-2 gap-4 text-sm mb-4">
             {extracted.name && (
               <div>
-                <p className="text-xs text-green-700">Name</p>
-                <p className="font-medium text-green-900">{extracted.name}</p>
+                <p
+                  className="text-xs font-medium"
+                  style={{ color: "var(--color-muted-foreground)" }}
+                >
+                  👤 Name
+                </p>
+                <p
+                  className="font-semibold mt-1"
+                  style={{ color: "var(--color-foreground)" }}
+                >
+                  {extracted.name}
+                </p>
               </div>
             )}
             {extracted.company && (
               <div>
-                <p className="text-xs text-green-700">Company</p>
-                <p className="font-medium text-green-900">{extracted.company}</p>
+                <p
+                  className="text-xs font-medium"
+                  style={{ color: "var(--color-muted-foreground)" }}
+                >
+                  🏢 Company
+                </p>
+                <p
+                  className="font-semibold mt-1"
+                  style={{ color: "var(--color-foreground)" }}
+                >
+                  {extracted.company}
+                </p>
               </div>
             )}
             {extracted.email && (
               <div>
-                <p className="text-xs text-green-700">Email</p>
-                <p className="font-medium text-green-900">{extracted.email}</p>
+                <p
+                  className="text-xs font-medium"
+                  style={{ color: "var(--color-muted-foreground)" }}
+                >
+                  📧 Email
+                </p>
+                <p
+                  className="font-semibold mt-1 break-all"
+                  style={{ color: "var(--color-foreground)" }}
+                >
+                  {extracted.email}
+                </p>
               </div>
             )}
             {extracted.phone && (
               <div>
-                <p className="text-xs text-green-700">Phone</p>
-                <p className="font-medium text-green-900">{extracted.phone}</p>
+                <p
+                  className="text-xs font-medium"
+                  style={{ color: "var(--color-muted-foreground)" }}
+                >
+                  📱 Phone
+                </p>
+                <p
+                  className="font-semibold mt-1"
+                  style={{ color: "var(--color-foreground)" }}
+                >
+                  {extracted.phone}
+                </p>
+              </div>
+            )}
+            {extracted.designation && (
+              <div>
+                <p
+                  className="text-xs font-medium"
+                  style={{ color: "var(--color-muted-foreground)" }}
+                >
+                  💼 Designation
+                </p>
+                <p
+                  className="font-semibold mt-1"
+                  style={{ color: "var(--color-foreground)" }}
+                >
+                  {extracted.designation}
+                </p>
+              </div>
+            )}
+            {extracted.address && (
+              <div>
+                <p
+                  className="text-xs font-medium"
+                  style={{ color: "var(--color-muted-foreground)" }}
+                >
+                  📍 Address
+                </p>
+                <p
+                  className="font-semibold mt-1"
+                  style={{ color: "var(--color-foreground)" }}
+                >
+                  {extracted.address}
+                </p>
               </div>
             )}
           </div>
-          <p className="text-xs text-green-700 mt-3">
-            Confidence: {Math.round(extracted.confidence * 100)}%
-          </p>
+
+          <div
+            className="text-xs font-medium pt-3 border-t"
+            style={{
+              borderColor: "var(--color-border)",
+              color: "var(--color-muted-foreground)",
+            }}
+          >
+            Confidence Score: <strong>{Math.round(extracted.confidence * 100)}%</strong>
+            {extracted.confidence >= 0.8 && (
+              <span style={{ color: "var(--color-success)" }}> ✓ High accuracy</span>
+            )}
+            {extracted.confidence < 0.8 && extracted.confidence >= 0.5 && (
+              <span style={{ color: "var(--color-warning)" }}>
+                ⚠ Review before saving
+              </span>
+            )}
+          </div>
         </div>
       )}
 
-      <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
+      {/* Progress Bar */}
+      <div
+        className="w-full h-2 rounded-full overflow-hidden"
+        style={{ background: "var(--color-muted)" }}
+      >
         <div
-          className="h-full bg-black transition-all duration-300"
-          style={{ width: `${progress}%` }}
+          className="h-full transition-all duration-300"
+          style={{
+            background:
+              step === "complete"
+                ? "var(--color-success)"
+                : "var(--color-primary)",
+            width: `${progress}%`,
+          }}
         />
       </div>
     </div>
