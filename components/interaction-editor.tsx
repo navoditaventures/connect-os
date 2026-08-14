@@ -43,9 +43,14 @@ export default function InteractionEditor({
       } else {
         await createInteraction({
           contact_id: contactId,
-          ...formData,
-          stage: formData.stage as any,
-          follow_up_status: formData.follow_up_status as any,
+          interaction_type: "met",
+          event_id: formData.event_id,
+          relationship: formData.relationship,
+          opportunity: formData.opportunity,
+          stage: (formData.stage || "New") as "New" | "Contacted" | "Conversation" | "Opportunity" | "Client" | "Lost",
+          notes: formData.notes,
+          follow_up_date: formData.follow_up_date,
+          follow_up_status: (formData.follow_up_status || "pending") as "pending" | "completed" | "not_required",
         });
       }
       onSave();

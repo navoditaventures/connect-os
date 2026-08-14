@@ -32,12 +32,11 @@ export default function WhatsApp() {
     setSelectedTemplate(template);
   };
 
-  const handleStartPreview = (eventId: string) => {
+  const handleStartPreview = () => {
     if (!digitalProfileUrl) {
       alert("Please set your digital profile URL in Settings first");
       return;
     }
-    setSelectedEventId(eventId);
     setStep("preview");
   };
 
