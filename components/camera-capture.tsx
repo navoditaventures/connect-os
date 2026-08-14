@@ -46,22 +46,24 @@ export default function CameraCapture({ onCapture, onError }: CameraCaptureProps
     }
   };
 
-  const capturePhoto = () => {
+  const capturePhoto = async () => {
     if (!videoRef.current || !canvasRef.current) return;
 
     const context = canvasRef.current.getContext("2d");
     if (!context) return;
 
-    canvasRef.current.width = videoRef.current.videoWidth;
-    canvasRef.current.height = videoRef.current.videoHeight;
+    const video = videoRef.current;
+    canvasRef.current.width = video.videoWidth;
+    canvasRef.current.height = video.videoHeight;
 
-    // Mirror the image on mobile devices to match the video preview
-    if (isMobile) {
-      context.translate(canvasRef.current.width, 0);
-      context.scale(-1, 1);
-    }
+    // Draw image with proper orientation
+    // Get device orientation
+    const screenOrientation = window.screen.orientation?.type || 'portrait-primary';
+    const isPortrait = screenOrientation.includes('portrait');
 
-    context.drawImage(videoRef.current, 0, 0);
+    // For rear camera (environment mode), draw without mirroring
+    // The video element already receives unmirrored feed from rear camera
+    context.drawImage(video, 0, 0, canvasRef.current.width, canvasRef.current.height);
 
     canvasRef.current.toBlob((blob) => {
       if (blob) {
@@ -96,7 +98,6 @@ export default function CameraCapture({ onCapture, onError }: CameraCaptureProps
           ref={videoRef}
           playsInline
           className="w-full h-full object-cover"
-          style={{ transform: isMobile ? "scaleX(-1)" : "none" }}
         />
 
         <div className="absolute inset-0 pointer-events-none">
