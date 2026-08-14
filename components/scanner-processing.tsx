@@ -185,15 +185,19 @@ export default function ScannerProcessing({
           >
             {step === "complete"
               ? "Card analyzed successfully!"
-              : "Analyzing business card with AI..."}
+              : step === "ocr"
+                ? "Reading text from card..."
+                : "Extracting contact information..."}
           </p>
           <p
             className="text-xs mt-2"
             style={{ color: "var(--color-muted-foreground)" }}
           >
-            {step === "analyzing"
-              ? "Reading all details from the card image"
-              : "Ready for review"}
+            {step === "ocr"
+              ? "Using Tesseract OCR (free, no API)"
+              : step === "parsing"
+                ? "Parsing contact details"
+                : "Ready for review"}
           </p>
         </div>
       </div>
