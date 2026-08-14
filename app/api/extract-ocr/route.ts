@@ -43,10 +43,15 @@ export async function POST(request: NextRequest) {
 }
 
 function parseBusinessCardText(ocrText: string): ExtractedContact {
+  console.log("Parsing OCR text, length:", ocrText.length);
+
   const lines = ocrText
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
+
+  console.log("Total lines:", lines.length);
+  console.log("Lines:", lines.slice(0, 10));
 
   const result: ExtractedContact = {
     name: "",
@@ -56,120 +61,114 @@ function parseBusinessCardText(ocrText: string): ExtractedContact {
     email: "",
     address: "",
     industry: "",
-    confidence: 0.6,
+    confidence: 0.5,
   };
 
-  // Email regex
-  const emailRegex = /[\w\.-]+@[\w\.-]+\.\w+/;
+  // Regex patterns
+  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+  const phoneRegex = /(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}|\+[0-9]{1,3}\s?[0-9]{6,14}/g;
+  const zipCodeRegex = /\b\d{5}(?:-\d{4})?\b/;
 
-  // Phone regex - international format
-  const phoneRegex = /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\+\d{1,3}\s?\d{6,14}/;
+  // Extract all emails
+  const emails = ocrText.match(emailRegex) || [];
+  if (emails.length > 0) {
+    result.email = emails[0].toLowerCase();
+  }
 
-  // Common job titles
+  // Extract all phone numbers
+  const phones = ocrText.match(phoneRegex) || [];
+  if (phones.length > 0) {
+    result.phone = phones[0].trim();
+  }
+
+  // Job title keywords
   const titleKeywords = [
-    "director",
-    "manager",
-    "ceo",
-    "cto",
-    "cfo",
-    "founder",
-    "president",
-    "vice",
-    "head",
-    "engineer",
-    "developer",
-    "designer",
-    "consultant",
-    "officer",
-    "executive",
-    "partner",
-    "specialist",
-    "lead",
-    "sr.",
-    "senior",
-    "jr.",
-    "junior",
-    "analyst",
-    "architect",
-    "administrator",
+    "president", "ceo", "cto", "cfo", "vp", "vice president",
+    "director", "manager", "lead", "head", "chief",
+    "engineer", "developer", "architect", "designer",
+    "consultant", "specialist", "analyst", "officer",
+    "founder", "partner", "executive", "senior", "junior"
   ];
 
-  let foundName = false;
-  let foundCompany = false;
-  let foundTitle = false;
-
+  // Find designation (job title)
   for (const line of lines) {
-    // Skip very short or very long lines
-    if (line.length < 2 || line.length > 150) continue;
-
-    // Check for email
-    const emailMatch = line.match(emailRegex);
-    if (emailMatch && !result.email) {
-      result.email = emailMatch[0].toLowerCase();
-      continue;
-    }
-
-    // Check for phone
-    const phoneMatch = line.match(phoneRegex);
-    if (phoneMatch && !result.phone) {
-      result.phone = phoneMatch[0].trim();
-      continue;
-    }
-
-    // Check for job title
-    const isTitle = titleKeywords.some((keyword) =>
-      line.toLowerCase().includes(keyword)
-    );
-    if (isTitle && !foundTitle) {
+    const lowerLine = line.toLowerCase();
+    if (titleKeywords.some(kw => lowerLine.includes(kw)) && line.length < 100) {
       result.designation = line;
-      foundTitle = true;
-      continue;
-    }
-
-    // First non-email, non-phone, non-title line is likely the name
-    if (!foundName && !line.includes("@") && line.length < 60) {
-      result.name = line;
-      foundName = true;
-      continue;
-    }
-
-    // Second line (after name) is likely company
-    if (foundName && !foundCompany && line.length > 3 && line.length < 100) {
-      result.company = line;
-      foundCompany = true;
-      continue;
-    }
-
-    // Check for address indicators
-    if (
-      !result.address &&
-      (line.toLowerCase().includes("st.") ||
-        line.toLowerCase().includes("street") ||
-        line.toLowerCase().includes("rd.") ||
-        line.toLowerCase().includes("road") ||
-        line.toLowerCase().includes("ave") ||
-        line.toLowerCase().includes("avenue") ||
-        line.toLowerCase().includes("blvd") ||
-        line.toLowerCase().includes("city") ||
-        /\d{5}/.test(line))
-    ) {
-      result.address = line;
+      console.log("Found designation:", line);
+      break;
     }
   }
 
-  // Calculate confidence based on extracted fields
+  // Extract name and company from first few lines
+  let lineIndex = 0;
+
+  // Skip lines that are just email/phone/website
+  while (lineIndex < lines.length) {
+    const line = lines[lineIndex];
+    if (line.includes("@") || line.match(phoneRegex) || line.includes("http") || line.includes("www.")) {
+      lineIndex++;
+      continue;
+    }
+    break;
+  }
+
+  // First valid line is usually the name (2-4 words, reasonable length)
+  if (lineIndex < lines.length && !result.name) {
+    const potentialName = lines[lineIndex];
+    const wordCount = potentialName.split(/\s+/).length;
+    if (wordCount >= 2 && wordCount <= 5 && potentialName.length < 80 && potentialName.length > 3) {
+      result.name = potentialName;
+      console.log("Found name:", potentialName);
+      lineIndex++;
+    }
+  }
+
+  // Next line after name is usually company
+  while (lineIndex < lines.length && !result.company) {
+    const line = lines[lineIndex];
+
+    // Skip designation and contact info lines
+    if (result.designation && line === result.designation) {
+      lineIndex++;
+      continue;
+    }
+    if (line.includes("@") || line.match(phoneRegex) || line.includes("http")) {
+      lineIndex++;
+      continue;
+    }
+
+    // If it's a reasonable company name length
+    if (line.length > 2 && line.length < 150) {
+      result.company = line;
+      console.log("Found company:", line);
+      break;
+    }
+    lineIndex++;
+  }
+
+  // Look for address (contains digits, streets, cities)
+  for (const line of lines) {
+    if (zipCodeRegex.test(line) ||
+        (line.toLowerCase().match(/st\.?|street|rd\.?|road|ave\.?|avenue|blvd\.?|boulevard|dr\.?|drive|ln\.?|lane|ct\.?|court/i) &&
+         line.length > 5)) {
+      result.address = line;
+      console.log("Found address:", line);
+      break;
+    }
+  }
+
+  // Calculate confidence
   const fieldsFilled = [
     result.name,
     result.company,
     result.email,
     result.phone,
     result.designation,
-  ].filter((f) => f).length;
+  ].filter((f) => f && f.length > 0).length;
 
-  result.confidence = Math.min(
-    1.0,
-    0.3 + fieldsFilled * 0.15
-  );
+  result.confidence = Math.min(1.0, 0.4 + fieldsFilled * 0.12);
 
+  console.log("Extracted contact:", result);
   return result;
 }
