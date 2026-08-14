@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
-import TemplateManager from "@/components/template-manager";
 import ExportManager from "@/components/export-manager";
 
 interface UserSettings {
@@ -98,10 +97,6 @@ export default function Settings() {
               <span className="text-sm text-green-600 font-medium flex items-center">{saveMessage}</span>
             )}
           </div>
-        </div>
-
-        <div className="bg-white rounded-lg p-6 border border-gray-200">
-          <TemplateManager />
         </div>
 
         <div className="bg-white rounded-lg p-6 border border-gray-200">
