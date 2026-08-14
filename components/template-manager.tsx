@@ -73,6 +73,8 @@ export default function TemplateManager() {
     return <p className="text-gray-600">Loading templates...</p>;
   }
 
+  const variableList = "first_name, full_name, company_name, designation, event_name, event_date, industry, relationship, opportunity, notes, digital_profile_url";
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
@@ -109,12 +111,12 @@ export default function TemplateManager() {
             <textarea
               value={formData.content}
               onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
-              placeholder="Use variables like {{first_name}}, {{company_name}}, {{digital_profile_url}}"
+              placeholder="Use variables like {first_name}, {company_name}, {digital_profile_url}"
               rows={8}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm font-mono"
             />
             <p className="text-xs text-gray-500 mt-2">
-              Use variables: first_name, full_name, company_name, designation, event_name, event_date, industry, relationship, opportunity, notes, digital_profile_url
+              Variables: {variableList}
             </p>
           </div>
 
