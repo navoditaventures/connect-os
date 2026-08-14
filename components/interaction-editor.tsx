@@ -16,6 +16,15 @@ interface InteractionEditorProps {
   onCancel: () => void;
 }
 
+type FormData = {
+  relationship: string;
+  opportunity: string;
+  stage: "New" | "Contacted" | "Conversation" | "Opportunity" | "Client" | "Lost";
+  notes: string;
+  follow_up_date: string;
+  follow_up_status: "pending" | "completed" | "not_required";
+};
+
 export default function InteractionEditor({
   interaction,
   contactId,
@@ -24,13 +33,13 @@ export default function InteractionEditor({
 }: InteractionEditorProps) {
   const { createInteraction, updateInteraction } = useInteractions();
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     relationship: interaction?.relationship || "Business Connection",
     opportunity: interaction?.opportunity || "Other",
-    stage: interaction?.stage || "New",
+    stage: (interaction?.stage || "New") as "New" | "Contacted" | "Conversation" | "Opportunity" | "Client" | "Lost",
     notes: interaction?.notes || "",
     follow_up_date: interaction?.follow_up_date || "",
-    follow_up_status: interaction?.follow_up_status || "pending",
+    follow_up_status: (interaction?.follow_up_status || "pending") as "pending" | "completed" | "not_required",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,13 +53,12 @@ export default function InteractionEditor({
         await createInteraction({
           contact_id: contactId,
           interaction_type: "met",
-          event_id: formData.event_id,
           relationship: formData.relationship,
           opportunity: formData.opportunity,
-          stage: (formData.stage || "New") as "New" | "Contacted" | "Conversation" | "Opportunity" | "Client" | "Lost",
+          stage: formData.stage,
           notes: formData.notes,
           follow_up_date: formData.follow_up_date,
-          follow_up_status: (formData.follow_up_status || "pending") as "pending" | "completed" | "not_required",
+          follow_up_status: formData.follow_up_status,
         });
       }
       onSave();
@@ -102,7 +110,7 @@ export default function InteractionEditor({
           <label className="block text-sm font-medium mb-1">Stage</label>
           <select
             value={formData.stage}
-            onChange={(e) => setFormData((prev) => ({ ...prev, stage: e.target.value }))}
+            onChange={(e) => setFormData((prev) => ({ ...prev, stage: e.target.value as FormData["stage"] }))}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
           >
             {RELATIONSHIP_STAGES.map((s) => (
@@ -129,7 +137,7 @@ export default function InteractionEditor({
           <label className="block text-sm font-medium mb-1">Follow-up Status</label>
           <select
             value={formData.follow_up_status}
-            onChange={(e) => setFormData((prev) => ({ ...prev, follow_up_status: e.target.value }))}
+            onChange={(e) => setFormData((prev) => ({ ...prev, follow_up_status: e.target.value as FormData["follow_up_status"] }))}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
           >
             {FOLLOW_UP_STATUSES.map((status) => (

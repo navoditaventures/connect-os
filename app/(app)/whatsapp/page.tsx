@@ -98,7 +98,7 @@ export default function WhatsApp() {
           </div>
 
           <button
-            onClick={() => handleStartPreview(selectedEventId)}
+            onClick={() => handleStartPreview()}
             className="w-full bg-green-600 text-white py-4 px-6 rounded-lg font-bold text-lg hover:bg-green-700"
           >
             💬 Start WhatsApp Campaign
