@@ -38,10 +38,10 @@ export default function Dashboard() {
       </div>
 
       <Link
-        href="/contacts/new"
+        href="/scanner"
         className="block w-full bg-black text-white text-center py-8 px-6 rounded-lg font-bold text-xl mb-8 hover:bg-gray-800 transition-colors"
       >
-        ➕ ADD CONTACT
+        📸 SCAN BUSINESS CARD
       </Link>
 
       {activeEvent && (
