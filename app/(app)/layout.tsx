@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import Navigation from "@/components/navigation";
+import SyncStatus from "@/components/sync-status";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -32,6 +33,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       <div className="flex-1 overflow-auto pb-20 md:pb-0">{children}</div>
+      <SyncStatus />
       <Navigation />
     </div>
   );
