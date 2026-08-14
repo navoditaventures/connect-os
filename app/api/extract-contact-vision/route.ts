@@ -18,7 +18,9 @@ interface ExtractedContact {
   rawText?: string;
 }
 
-const client = new Anthropic();
+const client = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,12 +33,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error("ANTHROPIC_API_KEY not configured");
+      return NextResponse.json(
+        { error: "API not configured - contact administrator" },
+        { status: 500 }
+      );
+    }
+
     const extracted = await extractContactFromImage(imageBase64, mimeType);
     return NextResponse.json(extracted);
   } catch (error) {
     console.error("Vision extraction error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error details:", errorMessage);
     return NextResponse.json(
-      { error: "Failed to extract contact information from image" },
+      { error: `Failed to extract contact: ${errorMessage}` },
       { status: 500 }
     );
   }
