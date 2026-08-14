@@ -6,7 +6,9 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  webpack: (config) => config,
+  experimental: {
+    turbopack: false,
+  },
 };
 
 export default withPWA({
