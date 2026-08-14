@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 interface ExtractRequest {
-  imageBase64: string;
+  ocrText: string;
 }
 
 interface ExtractedContact {
@@ -17,18 +17,20 @@ interface ExtractedContact {
 
 export async function POST(request: NextRequest) {
   try {
-    const { imageBase64 } = (await request.json()) as ExtractRequest;
+    console.log("OCR extraction API called");
+    const body = await request.json() as ExtractRequest;
+    console.log("OCR text received, length:", body.ocrText?.length || 0);
 
-    if (!imageBase64) {
+    if (!body.ocrText) {
+      console.error("No OCR text provided");
       return NextResponse.json(
-        { error: "Image data required" },
+        { error: "OCR text required" },
         { status: 400 }
       );
     }
 
-    // Parse the extracted text from the client
-    // The client will send pre-extracted OCR text
-    const extracted = parseBusinessCardText(imageBase64);
+    // Parse the extracted OCR text
+    const extracted = parseBusinessCardText(body.ocrText);
     return NextResponse.json(extracted);
   } catch (error) {
     console.error("OCR extraction error:", error);
