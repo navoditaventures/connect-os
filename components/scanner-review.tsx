@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { DuplicateMatch, useContacts } from "@/lib/hooks/useContacts";
+import { RELATIONSHIP_CATEGORIES, OPPORTUNITY_CATEGORIES, RELATIONSHIP_STAGES } from "@/lib/constants";
 
 interface ScannerReviewProps {
   extracted: {
@@ -36,6 +37,10 @@ export default function ScannerReview({
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
   const [confirmOverride, setConfirmOverride] = useState(false);
   const [notes, setNotes] = useState("");
+  const [relationship, setRelationship] = useState("Business Connection");
+  const [opportunity, setOpportunity] = useState("Other");
+  const [stage, setStage] = useState("New");
+  const [followUpDate, setFollowUpDate] = useState("");
 
   useEffect(() => {
     const checkDuplicates = async () => {
@@ -66,6 +71,10 @@ export default function ScannerReview({
         ...editData,
         notes: notes || undefined,
         contact_type: "active",
+        relationship,
+        opportunity,
+        stage,
+        followUpDate: followUpDate || undefined,
       });
     } catch (error) {
       console.error("Failed to save contact:", error);
@@ -197,6 +206,69 @@ export default function ScannerReview({
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
           />
+        </div>
+
+        <div className="border-t border-gray-200 pt-4">
+          <h3 className="font-semibold text-sm mb-4">Relationship Information</h3>
+
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">Relationship *</label>
+              <select
+                value={relationship}
+                onChange={(e) => setRelationship(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
+              >
+                {RELATIONSHIP_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Opportunity</label>
+              <select
+                value={opportunity}
+                onChange={(e) => setOpportunity(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
+              >
+                {OPPORTUNITY_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">Stage</label>
+              <select
+                value={stage}
+                onChange={(e) => setStage(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
+              >
+                {RELATIONSHIP_STAGES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Follow-up Date</label>
+              <input
+                type="date"
+                value={followUpDate}
+                onChange={(e) => setFollowUpDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
+              />
+            </div>
+          </div>
         </div>
       </div>
 

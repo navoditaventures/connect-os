@@ -6,16 +6,18 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { useInteractions } from "@/lib/hooks/useInteractions";
 import { Contact } from "@/lib/hooks/useContacts";
+import InteractionEditor from "@/components/interaction-editor";
 import Link from "next/link";
 
 export default function ContactDetail({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { user } = useAuth();
-  const { interactions, isLoading: interactionsLoading } = useInteractions(params.id);
+  const { interactions, isLoading: interactionsLoading, refetch } = useInteractions(params.id);
 
   const [contact, setContact] = useState<Contact | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showInteractionEditor, setShowInteractionEditor] = useState(false);
 
   useEffect(() => {
     const loadContact = async () => {
@@ -148,8 +150,70 @@ export default function ContactDetail({ params }: { params: { id: string } }) {
         </div>
       </div>
 
+      {showInteractionEditor ? (
+        <div className="mb-6">
+          <InteractionEditor
+            interaction={null}
+            contactId={params.id}
+            onSave={() => {
+              setShowInteractionEditor(false);
+              refetch();
+            }}
+            onCancel={() => setShowInteractionEditor(false)}
+          />
+        </div>
+      ) : null}
+
+      {!showInteractionEditor && interactions.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+          <h2 className="font-semibold mb-4">Current Relationship</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {interactions[0].relationship && (
+              <div>
+                <p className="text-xs text-gray-500 uppercase">Relationship</p>
+                <p className="font-medium">{interactions[0].relationship}</p>
+              </div>
+            )}
+            {interactions[0].opportunity && (
+              <div>
+                <p className="text-xs text-gray-500 uppercase">Opportunity</p>
+                <p className="font-medium">{interactions[0].opportunity}</p>
+              </div>
+            )}
+            <div>
+              <p className="text-xs text-gray-500 uppercase">Stage</p>
+              <p className="font-medium">{interactions[0].stage}</p>
+            </div>
+            {interactions[0].follow_up_date && (
+              <div>
+                <p className="text-xs text-gray-500 uppercase">Follow-up Date</p>
+                <p className="font-medium">
+                  {new Date(interactions[0].follow_up_date).toLocaleDateString()}
+                </p>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => setShowInteractionEditor(true)}
+            className="mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium"
+          >
+            Edit relationship →
+          </button>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="font-semibold mb-4">Interaction History</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="font-semibold">Interaction History</h2>
+          {!showInteractionEditor && (
+            <button
+              onClick={() => setShowInteractionEditor(true)}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              + Add
+            </button>
+          )}
+        </div>
         {interactionsLoading ? (
           <p className="text-gray-600">Loading interactions...</p>
         ) : interactions.length === 0 ? (
@@ -157,17 +221,34 @@ export default function ContactDetail({ params }: { params: { id: string } }) {
         ) : (
           <div className="space-y-4">
             {interactions.map((interaction) => (
-              <div key={interaction.id} className="border-l-4 border-gray-200 pl-4 py-2">
-                <div className="flex justify-between items-start">
-                  <p className="font-medium">{interaction.relationship || "Interaction"}</p>
-                  <span className="text-xs px-2 py-1 bg-gray-100 rounded">
-                    {new Date(interaction.created_at).toLocaleDateString()}
+              <div key={interaction.id} className="border-l-4 border-blue-200 pl-4 py-2">
+                <div className="flex justify-between items-start mb-1">
+                  <div>
+                    <p className="font-medium text-sm">{interaction.relationship || "Interaction"}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(interaction.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
+                    {interaction.stage}
                   </span>
                 </div>
-                {interaction.notes && <p className="text-sm text-gray-600 mt-1">{interaction.notes}</p>}
+                {interaction.opportunity && (
+                  <p className="text-xs text-gray-600 mb-1">
+                    💼 <strong>{interaction.opportunity}</strong>
+                  </p>
+                )}
+                {interaction.notes && (
+                  <p className="text-sm text-gray-600 italic">"{interaction.notes}"</p>
+                )}
                 {interaction.follow_up_date && (
                   <p className="text-xs text-gray-500 mt-2">
-                    Follow-up: {new Date(interaction.follow_up_date).toLocaleDateString()}
+                    📅 Follow-up: {new Date(interaction.follow_up_date).toLocaleDateString()}
+                    {interaction.follow_up_status && (
+                      <span className="ml-2 font-medium">
+                        ({interaction.follow_up_status === "pending" ? "⏳ Pending" : "✓ Completed"})
+                      </span>
+                    )}
                   </p>
                 )}
               </div>

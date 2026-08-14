@@ -47,17 +47,17 @@ export default function Scanner() {
         industry: contactData.industry,
       });
 
-      if (selectedEventId) {
-        await createInteraction({
-          contact_id: newContact.id,
-          event_id: selectedEventId,
-          interaction_type: "met",
-          relationship: "Business Connection",
-          stage: "New",
-          notes: contactData.notes,
-          follow_up_status: "pending",
-        });
-      }
+      await createInteraction({
+        contact_id: newContact.id,
+        event_id: selectedEventId || undefined,
+        interaction_type: "met",
+        relationship: contactData.relationship || "Business Connection",
+        opportunity: contactData.opportunity || "Other",
+        stage: contactData.stage || "New",
+        notes: contactData.notes,
+        follow_up_date: contactData.followUpDate || undefined,
+        follow_up_status: "pending",
+      });
 
       setSuccessCount((prev) => prev + 1);
       setStep("complete");
