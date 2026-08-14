@@ -44,8 +44,8 @@ export default function ScannerProcessing({
         const base64 = await blobToBase64(imageBlob);
         setProgress(30);
 
-        // Send image to AI extraction API
-        const response = await axios.post("/api/extract-contact-vision", {
+        // Send image to Gemini AI extraction API
+        const response = await axios.post("/api/extract-contact-gemini", {
           imageBase64: base64,
           mimeType: "image/jpeg",
         });
