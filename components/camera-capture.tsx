@@ -55,6 +55,12 @@ export default function CameraCapture({ onCapture, onError }: CameraCaptureProps
     canvasRef.current.width = videoRef.current.videoWidth;
     canvasRef.current.height = videoRef.current.videoHeight;
 
+    // Mirror the image on mobile devices to match the video preview
+    if (isMobile) {
+      context.translate(canvasRef.current.width, 0);
+      context.scale(-1, 1);
+    }
+
     context.drawImage(videoRef.current, 0, 0);
 
     canvasRef.current.toBlob((blob) => {
