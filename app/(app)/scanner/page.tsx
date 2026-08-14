@@ -81,35 +81,67 @@ export default function Scanner() {
 
   if (step === "mode-select") {
     return (
-      <div className="max-w-2xl mx-auto p-4">
-        <h1 className="text-3xl font-bold mt-6 mb-8">Scan Business Card</h1>
+      <div
+        className="min-h-screen"
+        style={{ background: "var(--color-background)" }}
+      >
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <h1 className="text-3xl font-bold mb-2" style={{ color: "var(--color-foreground)" }}>
+            Scan Business Card
+          </h1>
+          <p style={{ color: "var(--color-muted-foreground)", marginBottom: "2rem" }}>
+            Capture and organize networking contacts
+          </p>
 
-        <div className="space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-blue-900">
-              {activeEvent ? (
-                <>
-                  <strong>Active Event:</strong> {activeEvent.name}
-                  <br />
-                  <span className="text-xs">Scanned cards will be linked to this event</span>
-                </>
-              ) : (
-                <>
-                  <strong>No active event</strong>
-                  <br />
-                  <span className="text-xs">Create or start an event to organize scans</span>
-                </>
-              )}
-            </p>
-          </div>
+          {/* Event Status */}
+          {activeEvent ? (
+            <div
+              className="p-6 rounded-lg border-l-4 mb-8"
+              style={{
+                background: "var(--color-card)",
+                borderColor: "var(--color-accent)"
+              }}
+            >
+              <p style={{ color: "var(--color-foreground)" }}>
+                <strong>📅 Active Event: {activeEvent.name}</strong>
+              </p>
+              <p style={{ color: "var(--color-muted-foreground)", fontSize: "0.875rem", marginTop: "0.5rem" }}>
+                Scanned cards will be linked to this event
+              </p>
+            </div>
+          ) : (
+            <div
+              className="p-6 rounded-lg border-l-4 mb-8"
+              style={{
+                background: "var(--color-muted)",
+                borderColor: "var(--color-primary)"
+              }}
+            >
+              <p style={{ color: "var(--color-foreground)" }}>
+                <strong>No active event</strong>
+              </p>
+              <p style={{ color: "var(--color-muted-foreground)", fontSize: "0.875rem", marginTop: "0.5rem" }}>
+                Create or start an event to organize scans
+              </p>
+            </div>
+          )}
 
+          {/* Event Selector */}
           {!activeEvent && events.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium mb-2">Link to event (optional)</label>
+            <div className="mb-8">
+              <label className="block text-sm font-medium mb-3" style={{ color: "var(--color-foreground)" }}>
+                Link to event (optional)
+              </label>
               <select
                 value={selectedEventId}
                 onChange={(e) => setSelectedEventId(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                className="w-full px-4 py-2 rounded-lg border transition-all focus-visible:outline-2 focus-visible:outline-offset-2"
+                style={{
+                  background: "var(--color-input-bg)",
+                  borderColor: "var(--color-input-border)",
+                  color: "var(--color-input-foreground)",
+                  outlineColor: "var(--color-ring)"
+                }}
               >
                 <option value="">No event</option>
                 {events.map((event) => (
@@ -121,19 +153,34 @@ export default function Scanner() {
             </div>
           )}
 
-          <button
-            onClick={() => setStep("camera")}
-            className="w-full bg-black text-white py-4 px-6 rounded-lg font-bold text-lg hover:bg-gray-800"
-          >
-            📸 START SCANNING
-          </button>
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            <button
+              onClick={() => setStep("camera")}
+              className="w-full py-4 px-6 rounded-lg font-bold text-lg transition-all duration-200 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 flex items-center justify-center gap-2"
+              style={{
+                background: "var(--color-primary)",
+                color: "var(--color-on-primary)",
+                outlineColor: "var(--color-ring)"
+              }}
+            >
+              <span>📸</span>
+              START SCANNING
+            </button>
 
-          <Link
-            href="/contacts/new"
-            className="block text-center bg-gray-100 text-gray-900 py-3 px-6 rounded-lg font-medium hover:bg-gray-200"
-          >
-            Or add contact manually
-          </Link>
+            <Link
+              href="/contacts/new"
+              className="block text-center py-3 px-6 rounded-lg font-medium transition-all duration-200 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2"
+              style={{
+                background: "var(--color-muted)",
+                color: "var(--color-muted-foreground)",
+                border: "1px solid var(--color-border)",
+                outlineColor: "var(--color-ring)"
+              }}
+            >
+              Or add contact manually
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -141,98 +188,135 @@ export default function Scanner() {
 
   if (step === "camera" && !imageBlob) {
     return (
-      <div className="max-w-2xl mx-auto p-4">
-        <div className="flex justify-between items-center mb-6 mt-6">
-          <h2 className="text-2xl font-bold">Position Card</h2>
-          <button
-            onClick={() => setStep("mode-select")}
-            className="text-gray-600 hover:text-gray-900 text-2xl"
-          >
-            ✕
-          </button>
+      <div
+        className="min-h-screen"
+        style={{ background: "var(--color-background)" }}
+      >
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold" style={{ color: "var(--color-foreground)" }}>
+              Position Card
+            </h2>
+            <button
+              onClick={() => setStep("mode-select")}
+              className="text-2xl transition-transform hover:scale-110 active:scale-95"
+              style={{ color: "var(--color-muted-foreground)" }}
+            >
+              ✕
+            </button>
+          </div>
+
+          <CameraCapture
+            onCapture={handleCaptureComplete}
+            onError={(err) => alert(`Camera error: ${err}`)}
+          />
+
+          <p className="text-sm mt-4" style={{ color: "var(--color-muted-foreground)" }}>
+            Position the entire business card within the frame for best results.
+          </p>
         </div>
-
-        <CameraCapture
-          onCapture={handleCaptureComplete}
-          onError={(err) => alert(`Camera error: ${err}`)}
-        />
-
-        <p className="text-sm text-gray-600 mt-4">
-          Position the entire business card within the yellow frame for best results.
-        </p>
       </div>
     );
   }
 
   if (step === "processing") {
     return (
-      <div className="max-w-2xl mx-auto p-4">
-        <h2 className="text-2xl font-bold mb-8 mt-6">Processing Card</h2>
+      <div
+        className="min-h-screen"
+        style={{ background: "var(--color-background)" }}
+      >
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <h2 className="text-2xl font-bold mb-8" style={{ color: "var(--color-foreground)" }}>
+            Processing Card
+          </h2>
 
-        {imageBlob && (
-          <ScannerProcessing
-            imageBlob={imageBlob}
-            onComplete={handleProcessingComplete}
-            onError={(err) => {
-              alert(`Processing error: ${err}`);
-              handleReset();
-            }}
-            onCancel={() => handleReset()}
-          />
-        )}
+          {imageBlob && (
+            <ScannerProcessing
+              imageBlob={imageBlob}
+              onComplete={handleProcessingComplete}
+              onError={(err) => {
+                alert(`Processing error: ${err}`);
+                handleReset();
+              }}
+              onCancel={() => handleReset()}
+            />
+          )}
+        </div>
       </div>
     );
   }
 
   if (step === "review" && extractedData) {
     return (
-      <div className="max-w-2xl mx-auto p-4">
-        <div className="mt-6 mb-6">
-          <button
-            onClick={() => setStep("processing")}
-            className="text-gray-600 hover:text-gray-900 text-lg"
-          >
-            ← Back
-          </button>
-        </div>
+      <div
+        className="min-h-screen"
+        style={{ background: "var(--color-background)" }}
+      >
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <div className="mb-6">
+            <button
+              onClick={() => setStep("processing")}
+              className="text-lg font-medium transition-all hover:gap-1 flex items-center gap-1"
+              style={{ color: "var(--color-primary)" }}
+            >
+              ← Back
+            </button>
+          </div>
 
-        <ScannerReview
-          extracted={extractedData.extracted}
-          ocrText={extractedData.ocrText}
-          eventId={selectedEventId}
-          onSave={handleContactSave}
-          onCancel={() => handleReset()}
-        />
+          <ScannerReview
+            extracted={extractedData.extracted}
+            ocrText={extractedData.ocrText}
+            eventId={selectedEventId}
+            onSave={handleContactSave}
+            onCancel={() => handleReset()}
+          />
+        </div>
       </div>
     );
   }
 
   if (step === "complete") {
     return (
-      <div className="max-w-2xl mx-auto p-4">
-        <div className="mt-12 text-center">
-          <div className="text-6xl mb-4">✓</div>
-          <h2 className="text-3xl font-bold mb-2">Contact Saved!</h2>
-          <p className="text-gray-600 mb-8">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "var(--color-background)" }}
+      >
+        <div className="max-w-2xl mx-auto px-4 py-8 text-center">
+          <div className="text-6xl mb-6">✅</div>
+          <h2 className="text-3xl font-bold mb-3" style={{ color: "var(--color-foreground)" }}>
+            Contact Saved!
+          </h2>
+          <p className="text-lg mb-12" style={{ color: "var(--color-muted-foreground)" }}>
             {successCount > 1 ? `${successCount} contacts scanned` : "Ready to scan more cards"}
           </p>
 
           <div className="space-y-3">
             <button
               onClick={handleNewCard}
-              className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800"
+              className="w-full py-3 rounded-lg font-semibold transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+              style={{
+                background: "var(--color-primary)",
+                color: "var(--color-on-primary)"
+              }}
             >
-              📸 Scan Another Card
+              <span>📸</span>
+              Scan Another Card
             </button>
             <Link
               href="/contacts"
-              className="block bg-gray-100 text-gray-900 py-3 rounded-lg font-semibold hover:bg-gray-200"
+              className="block py-3 rounded-lg font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+              style={{
+                background: "var(--color-muted)",
+                color: "var(--color-muted-foreground)",
+                border: "1px solid var(--color-border)"
+              }}
             >
               View All Contacts
             </Link>
             <Link
               href="/dashboard"
-              className="block text-gray-600 hover:text-gray-900 py-3 font-medium"
+              className="block py-3 font-medium transition-all hover:underline"
+              style={{ color: "var(--color-primary)" }}
             >
               Back to Dashboard
             </Link>

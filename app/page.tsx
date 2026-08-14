@@ -15,22 +15,46 @@ export default function Page() {
   }, [user, isLoading, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--color-background)" }}>
       <div className="w-full max-w-md px-6">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-2">ConnectOS</h1>
-          <p className="text-gray-600">Networking Memory & Relationship System</p>
+        {/* Hero Section */}
+        <div className="text-center mb-16">
+          <div className="mb-6">
+            <h1 className="text-5xl font-bold mb-3" style={{ color: "var(--color-primary)" }}>
+              ConnectOS
+            </h1>
+            <p className="text-lg" style={{ color: "var(--color-muted-foreground)" }}>
+              Networking Memory & Relationship System
+            </p>
+          </div>
+          <p className="text-sm" style={{ color: "var(--color-muted-foreground)" }}>
+            Capture, organize, and follow up with your professional network
+          </p>
         </div>
 
+        {/* Loading State */}
         {isLoading ? (
-          <div className="text-center">
+          <div className="text-center py-12">
             <div className="inline-block animate-spin">
-              <div className="h-8 w-8 border-4 border-gray-200 border-t-black rounded-full" />
+              <div
+                className="h-8 w-8 border-4 border-transparent rounded-full"
+                style={{
+                  borderTopColor: "var(--color-primary)",
+                  borderRightColor: "var(--color-accent)"
+                }}
+              />
             </div>
           </div>
         ) : (
           <LoginForm />
         )}
+
+        {/* Features */}
+        <div className="mt-12 pt-8" style={{ borderTop: "1px solid var(--color-border)" }}>
+          <p className="text-xs text-center" style={{ color: "var(--color-muted-foreground)" }}>
+            ✓ Scan business cards  ✓ Manage contacts  ✓ Track relationships
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -50,7 +74,18 @@ function LoginForm() {
   return (
     <button
       onClick={handleGoogleSignIn}
-      className="w-full bg-black text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+      className="w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2"
+      style={{
+        backgroundColor: "var(--color-primary)",
+        color: "var(--color-on-primary)",
+        outlineColor: "var(--color-ring)"
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.opacity = "0.95";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.opacity = "1";
+      }}
     >
       <svg className="w-5 h-5" viewBox="0 0 24 24">
         <path

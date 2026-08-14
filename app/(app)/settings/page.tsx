@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import ExportManager from "@/components/export-manager";
+import FormInput from "@/components/form-input";
+import Button from "@/components/button";
 
 interface UserSettings {
   digital_profile_url: string;
@@ -69,51 +71,110 @@ export default function Settings() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6 mt-6">Settings</h1>
-
-      <div className="space-y-6">
-        <div className="bg-white rounded-lg p-6 border border-gray-200">
-          <h2 className="font-semibold mb-4">Digital Profile</h2>
-          <p className="text-sm text-gray-600 mb-4">
-            Your portfolio or profile URL that will be included in WhatsApp messages
+    <div
+      className="min-h-screen"
+      style={{ background: "var(--color-background)" }}
+    >
+      {/* Header */}
+      <div
+        className="border-b"
+        style={{
+          borderColor: "var(--color-border)",
+          background: "var(--color-card)"
+        }}
+      >
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <h1 className="text-3xl font-bold" style={{ color: "var(--color-foreground)" }}>
+            Settings
+          </h1>
+          <p style={{ color: "var(--color-muted-foreground)", fontSize: "0.875rem" }}>
+            Manage your profile and preferences
           </p>
-          <input
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+        {/* Digital Profile Section */}
+        <div
+          className="card p-6 rounded-lg border"
+          style={{
+            background: "var(--color-card)",
+            borderColor: "var(--color-border)"
+          }}
+        >
+          <h2 className="font-bold text-lg mb-2" style={{ color: "var(--color-foreground)" }}>
+            🔗 Digital Profile
+          </h2>
+          <p style={{ color: "var(--color-muted-foreground)", fontSize: "0.875rem", marginBottom: "1.5rem" }}>
+            Your portfolio or profile URL that will be included in WhatsApp messages and contact sharing
+          </p>
+
+          <FormInput
             type="url"
             value={settings.digital_profile_url}
             onChange={(e) => setSettings({ ...settings, digital_profile_url: e.target.value })}
             placeholder="https://yourportfolio.com"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black mb-4"
           />
-          <div className="flex gap-2">
-            <button
+
+          <div className="flex gap-3 mt-4 items-center">
+            <Button
               onClick={handleSaveSettings}
               disabled={isSaving}
-              className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-medium disabled:opacity-50"
+              loading={isSaving}
+              variant="primary"
+              size="md"
             >
-              {isSaving ? "Saving..." : "Save Profile URL"}
-            </button>
+              Save Profile URL
+            </Button>
             {saveMessage && (
-              <span className="text-sm text-green-600 font-medium flex items-center">{saveMessage}</span>
+              <span
+                className="text-sm font-medium"
+                style={{
+                  color:
+                    saveMessage.includes("success")
+                      ? "var(--color-success)"
+                      : "var(--color-destructive)"
+                }}
+              >
+                {saveMessage}
+              </span>
             )}
           </div>
         </div>
 
-        <div className="bg-white rounded-lg p-6 border border-gray-200">
+        {/* Export Section */}
+        <div
+          className="card p-6 rounded-lg border"
+          style={{
+            background: "var(--color-card)",
+            borderColor: "var(--color-border)"
+          }}
+        >
           <ExportManager />
         </div>
 
-        <div className="bg-white rounded-lg p-6 border border-gray-200">
-          <h2 className="font-semibold mb-4">Account</h2>
-          <p className="text-sm text-gray-600 mb-4">
+        {/* Account Section */}
+        <div
+          className="card p-6 rounded-lg border"
+          style={{
+            background: "var(--color-card)",
+            borderColor: "var(--color-border)"
+          }}
+        >
+          <h2 className="font-bold text-lg mb-2" style={{ color: "var(--color-foreground)" }}>
+            👤 Account
+          </h2>
+          <p style={{ color: "var(--color-muted-foreground)", fontSize: "0.875rem", marginBottom: "1.5rem" }}>
             Signed in as <strong>{user?.email}</strong>
           </p>
-          <button
+          <Button
             onClick={handleSignOut}
-            className="text-red-600 hover:text-red-700 font-medium"
+            variant="destructive"
+            size="md"
           >
             Sign out
-          </button>
+          </Button>
         </div>
       </div>
     </div>

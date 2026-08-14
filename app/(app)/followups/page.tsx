@@ -116,142 +116,297 @@ export default function Followups() {
   ).length;
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6 mt-6">Follow-ups</h1>
-
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="text-2xl font-bold text-blue-600">{pendingCount}</div>
-          <div className="text-sm text-gray-600">Pending</div>
-        </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="text-2xl font-bold text-red-600">{overdueCount}</div>
-          <div className="text-sm text-gray-600">Overdue</div>
-        </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="text-2xl font-bold text-green-600">{completedCount}</div>
-          <div className="text-sm text-gray-600">Completed</div>
+    <div
+      className="min-h-screen"
+      style={{ background: "var(--color-background)" }}
+    >
+      {/* Header */}
+      <div
+        className="border-b"
+        style={{
+          borderColor: "var(--color-border)",
+          background: "var(--color-card)"
+        }}
+      >
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          <h1 className="text-3xl font-bold" style={{ color: "var(--color-foreground)" }}>
+            Follow-ups
+          </h1>
+          <p style={{ color: "var(--color-muted-foreground)", fontSize: "0.875rem" }}>
+            Manage and track follow-up communications
+          </p>
         </div>
       </div>
 
-      <div className="flex gap-2 mb-6">
-        {(["pending", "completed", "all"] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-              filter === f
-                ? "bg-black text-white"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
+      {/* Content */}
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div
+            className="card p-6 rounded-lg border"
+            style={{
+              background: "var(--color-card)",
+              borderColor: "var(--color-border)"
+            }}
           >
-            {f === "pending"
-              ? "Pending"
-              : f === "completed"
-                ? "Completed"
-                : "All"}
-          </button>
-        ))}
-      </div>
+            <div
+              className="text-3xl font-bold mb-2"
+              style={{ color: "var(--color-primary)" }}
+            >
+              {pendingCount}
+            </div>
+            <div style={{ color: "var(--color-muted-foreground)", fontSize: "0.875rem" }}>
+              Pending
+            </div>
+          </div>
+          <div
+            className="card p-6 rounded-lg border"
+            style={{
+              background: "var(--color-card)",
+              borderColor: "var(--color-border)"
+            }}
+          >
+            <div
+              className="text-3xl font-bold mb-2"
+              style={{ color: "var(--color-destructive)" }}
+            >
+              {overdueCount}
+            </div>
+            <div style={{ color: "var(--color-muted-foreground)", fontSize: "0.875rem" }}>
+              Overdue
+            </div>
+          </div>
+          <div
+            className="card p-6 rounded-lg border"
+            style={{
+              background: "var(--color-card)",
+              borderColor: "var(--color-border)"
+            }}
+          >
+            <div
+              className="text-3xl font-bold mb-2"
+              style={{ color: "var(--color-success)" }}
+            >
+              {completedCount}
+            </div>
+            <div style={{ color: "var(--color-muted-foreground)", fontSize: "0.875rem" }}>
+              Completed
+            </div>
+          </div>
+        </div>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-lg p-4 border border-gray-200 animate-pulse h-24" />
+        {/* Filter Buttons */}
+        <div className="flex gap-3 mb-8 flex-wrap">
+          {(["pending", "completed", "all"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className="px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 hover:scale-105 active:scale-95"
+              style={{
+                background:
+                  filter === f ? "var(--color-primary)" : "var(--color-muted)",
+                color:
+                  filter === f
+                    ? "var(--color-on-primary)"
+                    : "var(--color-muted-foreground)",
+                border: `1px solid ${
+                  filter === f ? "var(--color-primary)" : "var(--color-border)"
+                }`
+              }}
+            >
+              {f === "pending"
+                ? "Pending"
+                : f === "completed"
+                  ? "Completed"
+                  : "All"}
+            </button>
           ))}
         </div>
-      ) : followUps.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-600 mb-4">
-            {filter === "pending"
-              ? "No pending follow-ups"
-              : filter === "completed"
-                ? "No completed follow-ups"
-                : "No follow-ups scheduled"}
-          </p>
-          <Link href="/contacts" className="text-blue-600 hover:underline">
-            Manage contacts →
-          </Link>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {followUps.map((followUp) => {
-            const isOverdue =
-              followUp.follow_up_status === "pending" &&
-              new Date(followUp.follow_up_date) < new Date();
 
-            return (
-              <Link
-                key={followUp.id}
-                href={`/contacts/${followUp.contact_id}`}
-                className={`block p-4 border rounded-lg transition-all ${
-                  isOverdue
-                    ? "bg-red-50 border-red-300 hover:border-red-400"
-                    : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                }`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <p className="font-semibold">{followUp.contact_name}</p>
-                    {followUp.contact_company && (
-                      <p className="text-sm text-gray-600">{followUp.contact_company}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    {followUp.follow_up_status === "pending" ? (
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleMarkComplete(followUp.id);
-                        }}
-                        className="text-xs px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 font-medium"
-                      >
-                        Mark Done
-                      </button>
-                    ) : (
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleMarkPending(followUp.id);
-                        }}
-                        className="text-xs px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 font-medium"
-                      >
-                        Reopen
-                      </button>
-                    )}
-                  </div>
-                </div>
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="rounded-lg p-6 border animate-pulse h-24"
+                style={{
+                  background: "var(--color-card)",
+                  borderColor: "var(--color-border)"
+                }}
+              />
+            ))}
+          </div>
+        ) : followUps.length === 0 ? (
+          <div className="text-center py-12">
+            <p
+              className="mb-4"
+              style={{ color: "var(--color-muted-foreground)" }}
+            >
+              {filter === "pending"
+                ? "No pending follow-ups"
+                : filter === "completed"
+                  ? "No completed follow-ups"
+                  : "No follow-ups scheduled"}
+            </p>
+            <Link
+              href="/contacts"
+              className="inline-block font-medium transition-all hover:gap-1 flex items-center gap-1"
+              style={{ color: "var(--color-primary)" }}
+            >
+              Manage contacts →
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {followUps.map((followUp) => {
+              const isOverdue =
+                followUp.follow_up_status === "pending" &&
+                new Date(followUp.follow_up_date) < new Date();
 
-                <div className="grid grid-cols-2 gap-3 text-sm mb-3">
-                  <div>
-                    <p className="text-xs text-gray-500">Follow-up Date</p>
-                    <p className="font-medium">
-                      {new Date(followUp.follow_up_date).toLocaleDateString()}
-                      {isOverdue && <span className="text-red-600 font-bold"> (overdue)</span>}
+              return (
+                <Link
+                  key={followUp.id}
+                  href={`/contacts/${followUp.contact_id}`}
+                  className="block p-6 rounded-lg border transition-all duration-200 hover:scale-102"
+                  style={{
+                    background: isOverdue ? "rgba(220, 38, 38, 0.05)" : "var(--color-card)",
+                    borderColor: isOverdue
+                      ? "var(--color-destructive)"
+                      : "var(--color-border)",
+                    borderLeft: isOverdue
+                      ? "4px solid var(--color-destructive)"
+                      : "4px solid var(--color-primary)"
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <p
+                        className="font-semibold"
+                        style={{ color: "var(--color-foreground)" }}
+                      >
+                        {followUp.contact_name}
+                      </p>
+                      {followUp.contact_company && (
+                        <p
+                          style={{
+                            fontSize: "0.875rem",
+                            color: "var(--color-muted-foreground)"
+                          }}
+                        >
+                          {followUp.contact_company}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      {followUp.follow_up_status === "pending" ? (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleMarkComplete(followUp.id);
+                          }}
+                          className="text-xs px-3 py-1.5 rounded font-medium transition-all hover:scale-105 active:scale-95"
+                          style={{
+                            background: "rgba(16, 185, 129, 0.1)",
+                            color: "#10B981"
+                          }}
+                        >
+                          Mark Done
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleMarkPending(followUp.id);
+                          }}
+                          className="text-xs px-3 py-1.5 rounded font-medium transition-all hover:scale-105 active:scale-95"
+                          style={{
+                            background: "var(--color-muted)",
+                            color: "var(--color-muted-foreground)",
+                            border: "1px solid var(--color-border)"
+                          }}
+                        >
+                          Reopen
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                    <div>
+                      <p
+                        style={{
+                          fontSize: "0.75rem",
+                          color: "var(--color-muted-foreground)",
+                          marginBottom: "0.25rem"
+                        }}
+                      >
+                        Follow-up Date
+                      </p>
+                      <p
+                        className="font-medium"
+                        style={{ color: "var(--color-foreground)" }}
+                      >
+                        {new Date(followUp.follow_up_date).toLocaleDateString()}
+                        {isOverdue && (
+                          <span
+                            style={{
+                              color: "var(--color-destructive)",
+                              fontWeight: "bold",
+                              marginLeft: "0.5rem"
+                            }}
+                          >
+                            (overdue)
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p
+                        style={{
+                          fontSize: "0.75rem",
+                          color: "var(--color-muted-foreground)",
+                          marginBottom: "0.25rem"
+                        }}
+                      >
+                        Relationship
+                      </p>
+                      <p
+                        className="font-medium"
+                        style={{ color: "var(--color-foreground)" }}
+                      >
+                        {followUp.relationship}
+                      </p>
+                    </div>
+                  </div>
+
+                  {followUp.opportunity && (
+                    <div className="mb-3">
+                      <span
+                        className="inline-block px-2 py-1 rounded text-xs font-medium"
+                        style={{
+                          background: "rgba(37, 99, 235, 0.1)",
+                          color: "var(--color-primary)"
+                        }}
+                      >
+                        {followUp.opportunity}
+                      </span>
+                    </div>
+                  )}
+
+                  {followUp.notes && (
+                    <p
+                      className="text-xs italic"
+                      style={{ color: "var(--color-muted-foreground)" }}
+                    >
+                      "{followUp.notes}"
                     </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Relationship</p>
-                    <p className="font-medium">{followUp.relationship}</p>
-                  </div>
-                </div>
-
-                {followUp.opportunity && (
-                  <div className="text-xs mb-2">
-                    <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                      {followUp.opportunity}
-                    </span>
-                  </div>
-                )}
-
-                {followUp.notes && (
-                  <p className="text-xs text-gray-600 italic">"{followUp.notes}"</p>
-                )}
-              </Link>
-            );
-          })}
-        </div>
-      )}
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
