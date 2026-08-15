@@ -45,17 +45,14 @@ export async function POST(request: NextRequest) {
 function parseBusinessCardText(ocrText: string): ExtractedContact {
   console.log("\n========== OCR TEXT RECEIVED ==========");
   console.log("Raw OCR text:\n", ocrText);
-  console.log("Text length:", ocrText.length);
 
   const lines = ocrText
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
 
-  console.log("\nTotal lines:", lines.length);
-  lines.forEach((line, i) => {
-    console.log(`Line ${i}: "${line}"`);
-  });
+  console.log("\nLines extracted:");
+  lines.forEach((line, i) => console.log(`  ${i}: "${line}"`));
 
   const result: ExtractedContact = {
     name: "",
@@ -68,97 +65,139 @@ function parseBusinessCardText(ocrText: string): ExtractedContact {
     confidence: 0.5,
   };
 
-  // Regex patterns
+  // Regex patterns - more robust
   const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-  const phoneRegex = /(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}|\+[0-9]{1,3}\s?[0-9]{6,14}/g;
-  const zipCodeRegex = /\b\d{5}(?:-\d{4})?\b/;
+  const phoneRegex = /(\+\d{1,3}\s?)?\d{7,14}|(\+\d{1,3}[-.\s]?)?\(?\d{3,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{4}/g;
+  const zipCodeRegex = /\b\d{5,6}\b/;
+  const commonTaglines = ["trusted heritage", "smart future", "tagline", "slogan", "motto"];
 
-  // Extract all emails
+  // Step 1: Extract emails (most reliable)
   const emails = ocrText.match(emailRegex) || [];
-  if (emails && emails.length > 0 && emails[0]) {
+  if (emails.length > 0) {
     result.email = emails[0].toLowerCase();
+    console.log("✓ Email:", result.email);
   }
 
-  // Extract all phone numbers
+  // Step 2: Extract phone (look for patterns)
   const phones = ocrText.match(phoneRegex) || [];
-  if (phones && phones.length > 0 && phones[0]) {
+  if (phones.length > 0) {
     result.phone = phones[0].trim();
+    console.log("✓ Phone:", result.phone);
   }
 
-  // Job title keywords
+  // Step 3: Find designation (job title keywords)
   const titleKeywords = [
     "president", "ceo", "cto", "cfo", "vp", "vice president",
-    "director", "manager", "lead", "head", "chief",
+    "director", "manager", "lead", "head", "chief", "officer",
     "engineer", "developer", "architect", "designer",
-    "consultant", "specialist", "analyst", "officer",
-    "founder", "partner", "executive", "senior", "junior"
+    "consultant", "specialist", "analyst",
+    "founder", "partner", "executive", "senior", "junior",
+    "associate", "coordinator", "supervisor", "assistant"
   ];
 
-  // Find designation (job title)
   for (const line of lines) {
     const lowerLine = line.toLowerCase();
-    if (titleKeywords.some(kw => lowerLine.includes(kw)) && line.length < 100) {
+    const hasTitle = titleKeywords.some(kw => lowerLine.includes(kw));
+    const isShort = line.length < 100;
+    const isNotCompany = !lowerLine.includes("ltd") && !lowerLine.includes("inc") && !lowerLine.includes("llc");
+
+    if (hasTitle && isShort && isNotCompany) {
       result.designation = line;
-      console.log("Found designation:", line);
+      console.log("✓ Designation:", line);
       break;
     }
   }
 
-  // Extract name and company from first few lines
-  let lineIndex = 0;
-
-  // Skip lines that are just email/phone/website
-  while (lineIndex < lines.length) {
-    const line = lines[lineIndex];
-    if (line.includes("@") || line.match(phoneRegex) || line.includes("http") || line.includes("www.")) {
-      lineIndex++;
-      continue;
-    }
-    break;
-  }
-
-  // First valid line is usually the name (2-4 words, reasonable length)
-  if (lineIndex < lines.length && !result.name) {
-    const potentialName = lines[lineIndex];
-    const wordCount = potentialName.split(/\s+/).length;
-    if (wordCount >= 2 && wordCount <= 5 && potentialName.length < 80 && potentialName.length > 3) {
-      result.name = potentialName;
-      console.log("Found name:", potentialName);
-      lineIndex++;
-    }
-  }
-
-  // Next line after name is usually company
-  while (lineIndex < lines.length && !result.company) {
-    const line = lines[lineIndex];
-
-    // Skip designation and contact info lines
-    if (result.designation && line === result.designation) {
-      lineIndex++;
-      continue;
-    }
-    if (line.includes("@") || line.match(phoneRegex) || line.includes("http")) {
-      lineIndex++;
-      continue;
-    }
-
-    // If it's a reasonable company name length
-    if (line.length > 2 && line.length < 150) {
-      result.company = line;
-      console.log("Found company:", line);
-      break;
-    }
-    lineIndex++;
-  }
-
-  // Look for address (contains digits, streets, cities)
+  // Step 4: Find address (zip code or address keywords)
   for (const line of lines) {
-    if (zipCodeRegex.test(line) ||
-        (line.toLowerCase().match(/st\.?|street|rd\.?|road|ave\.?|avenue|blvd\.?|boulevard|dr\.?|drive|ln\.?|lane|ct\.?|court/i) &&
-         line.length > 5)) {
+    const lowerLine = line.toLowerCase();
+    const hasZip = zipCodeRegex.test(line);
+    const hasAddressKeywords = /street|road|avenue|boulevard|drive|lane|court|floor|block|main|st\.|rd\.|ave\.|blvd\.|dr\.|ln\.|bangalore|koramangala|delhi|mumbai|chennai/i.test(line);
+    const hasNumber = /\d{2,}/.test(line);
+
+    if ((hasZip || (hasAddressKeywords && hasNumber)) && line.length > 10) {
       result.address = line;
-      console.log("Found address:", line);
+      console.log("✓ Address:", line);
       break;
+    }
+  }
+
+  // Step 5: Extract company and name (trickier)
+  // Strategy:
+  // - Company is usually short (1-3 words), contains Ltd/Inc/Bank/Ltd, or is at top
+  // - Name is 2-4 words, comes before designation
+  // - Skip taglines
+
+  const nameAndCompanyLines = lines.filter(line => {
+    const lowerLine = line.toLowerCase();
+    // Skip contact info, addresses, designations, taglines
+    if (line.includes("@") || line.match(phoneRegex) || line.includes("http") ||
+        line.includes("www") || lowerLine.includes("fax") || lowerLine.includes("website")) {
+      return false;
+    }
+    if (commonTaglines.some(tag => lowerLine.includes(tag))) {
+      return false;
+    }
+    if (result.designation && line === result.designation) {
+      return false;
+    }
+    if (result.address && line === result.address) {
+      return false;
+    }
+    return true;
+  });
+
+  console.log("\nName/Company candidate lines:", nameAndCompanyLines);
+
+  // Find company first (usually contains Ltd, Inc, Bank, Corp, or is the brand)
+  for (const line of nameAndCompanyLines) {
+    const lowerLine = line.toLowerCase();
+    if (lowerLine.includes("ltd") || lowerLine.includes("inc") || lowerLine.includes("bank") ||
+        lowerLine.includes("corp") || lowerLine.includes("pvt") || lowerLine.includes("limited")) {
+      result.company = line;
+      console.log("✓ Company (branded):", line);
+      break;
+    }
+  }
+
+  // Find name: 2-5 words, reasonable length, not company
+  if (!result.name && nameAndCompanyLines.length > 0) {
+    for (const line of nameAndCompanyLines) {
+      if (line === result.company) continue;
+
+      const wordCount = line.split(/\s+/).length;
+      const isReasonableLength = line.length > 3 && line.length < 80;
+      const hasOnlyLettersAndSpaces = /^[a-zA-Z\s.'-]+$/.test(line);
+
+      if (wordCount >= 2 && wordCount <= 5 && isReasonableLength && hasOnlyLettersAndSpaces) {
+        result.name = line;
+        console.log("✓ Name:", line);
+        break;
+      }
+    }
+  }
+
+  // Fallback: if company not found, use first brand-like line
+  if (!result.company && nameAndCompanyLines.length > 0) {
+    for (const line of nameAndCompanyLines) {
+      if (line === result.name) continue;
+      if (line.length < 150 && line.length > 2) {
+        result.company = line;
+        console.log("✓ Company (fallback):", line);
+        break;
+      }
+    }
+  }
+
+  // Fallback: if name not found, find a 2-3 word line
+  if (!result.name && nameAndCompanyLines.length > 0) {
+    for (const line of nameAndCompanyLines) {
+      const wordCount = line.split(/\s+/).length;
+      if (wordCount === 2 || wordCount === 3) {
+        result.name = line;
+        console.log("✓ Name (fallback):", line);
+        break;
+      }
     }
   }
 
@@ -171,8 +210,11 @@ function parseBusinessCardText(ocrText: string): ExtractedContact {
     result.designation,
   ].filter((f) => f && f.length > 0).length;
 
-  result.confidence = Math.min(1.0, 0.4 + fieldsFilled * 0.12);
+  result.confidence = Math.min(1.0, 0.4 + fieldsFilled * 0.15);
 
-  console.log("Extracted contact:", result);
+  console.log("\n========== FINAL RESULT ==========");
+  console.log(result);
+  console.log("Confidence:", Math.round(result.confidence * 100) + "%");
+
   return result;
 }
