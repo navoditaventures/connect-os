@@ -43,15 +43,19 @@ export async function POST(request: NextRequest) {
 }
 
 function parseBusinessCardText(ocrText: string): ExtractedContact {
-  console.log("Parsing OCR text, length:", ocrText.length);
+  console.log("\n========== OCR TEXT RECEIVED ==========");
+  console.log("Raw OCR text:\n", ocrText);
+  console.log("Text length:", ocrText.length);
 
   const lines = ocrText
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
 
-  console.log("Total lines:", lines.length);
-  console.log("Lines:", lines.slice(0, 10));
+  console.log("\nTotal lines:", lines.length);
+  lines.forEach((line, i) => {
+    console.log(`Line ${i}: "${line}"`);
+  });
 
   const result: ExtractedContact = {
     name: "",
